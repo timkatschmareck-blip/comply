@@ -1,0 +1,52 @@
+# comply - Die GPSR Compliance App für DACH
+**Ziel:** Die #1 App um Shopify Shops abmahnsicher nach EU GPSR (seit 13.12.2024) zu machen.
+
+### USP (Einzigartigkeit)
+Andere Apps machen nur AGB-Texte. Wir lösen das echte Problem: PRODUKT-PFLICHTEN.
+Abmahn-Anwälte suchen 2026 gezielt nach fehlenden Hersteller-Adressen. Wir sind die einzige App die das AUTOMATISCH fixt.
+
+### PHASE 1 - MVP (Heute - was du jetzt baust)
+[ ] GPSR Dashboard in app._index.tsx
+    - Scan aller Produkte (erste 50)
+    - Check: vendor, manufacturer_address (metafield), safety_info, eu_responsible
+    - Score: 0-100 + critical/warning/ok
+    - Banner: "X Produkte abmahngefährdet"
+
+### PHASE 2 - Der FIX (Morgen - Das verkauft die App)
+[ ] Hersteller-Datenbank (Prisma Model Manufacturer)
+    - Name, Straße, PLZ, Stadt, Land, E-Mail, Telefon
+    - Einmal anlegen, auf alle Produkte anwenden
+[ ] Massen-Edit
+    - Button: "Allen Produkten von Vendor X Hersteller Y zuweisen"
+    - Schreibt in Metafields: comply.manufacturer_address, comply.eu_responsible
+[ ] CSV Export / Import
+    - Export aller Fehler als CSV für Anwalt / Lieferant
+    - Import: Lieferanten schicken dir Adressen, du importierst
+
+### PHASE 3 - AI & Automatisierung (Woche 2 - MOAT)
+[ ] AI Sicherheitshinweise Generator
+    - Liest Produkttitel + Kategorie
+    - Generiert automatisch: "Achtung! Nicht für Kinder unter 3 Jahren..."
+    - Speichert in comply.safety_info
+[ ] Lieferanten-Erkennung
+    - Wenn Produkt von "China Dropship" -> warnt automatisch: "EU Verantwortliche Person Pflicht!"
+[ ] Bild-Scanner
+    - Prüft ob CE Logo auf Bild ist, aber keine CE Metafields vorhanden
+[ ] Produkt-Template Check
+    - Fügt automatisch im Theme die GPSR Infos unter den Kauf-Button ein
+
+### PHASE 4 - Monetarisierung & Shopify App Store
+[ ] Pricing: Free (5 Produkte), Pro 19€/Monat (unlimited + CSV + AI)
+[ ] Onboarding: 3 Schritte: 1. Hersteller anlegen 2. Produkte zuweisen 3. Theme Block aktivieren
+[ ] PDF Report für Behörden: 1 Klick "GPSR Nachweis PDF" für alle Produkte
+[ ] Shopify Flow Trigger: "Wenn neues Produkt erstellt -> Prüfe GPSR"
+[ ] App Store Screenshots: Vorher/Nachher Score
+
+### TECHNISCH
+- Metafields Namespace: comply.*
+- Datenbank: Prisma + Manufacturer + ProductCheckLog
+- GraphQL Admin API: products, metafieldsSet
+- Theme App Extension: comply-gpsr-info.liquid
+
+### MARKETING CLAIM
+"comply macht deinen Shopify Shop in 5 Minuten GPSR-sicher - bevor die Abmahnung kommt."
