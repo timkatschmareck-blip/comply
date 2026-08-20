@@ -3,22 +3,13 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 
 export const loader = async ({ request }) => {
-  const { admin, session } = await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
   const shop = session.shop;
-  try {
-    const res = await admin.graphql(`query { products(first: 20) { nodes { id title } } }`);
-    const data = await res.json();
-    const products = data?.data?.products?.nodes || [];
-    const rules = await db.packagingRule.findMany({ where: { shop } });
-    let settings = await db.shopComplianceSettings.findUnique({ where: { shop } });
-    if (!settings) {
-      settings = { lucidId: "", defaultPaper_g: 0, defaultPlastic_g: 0 };
-    }
-    return { products, rules, settings };
-  } catch (e) {
-    console.error("PACKAGING LOADER ERROR", e);
-    return { products: [], rules: [], settings: { lucidId: "", defaultPaper_g: 0, defaultPlastic_g: 0 } };
-  }
+  const rules = await db.packagingRule.findMany({ where: { shop } }).catch(()=>[]);
+  let settings = await db.shopComplianceSettings.findUnique({ where: { shop } }).catch(()=>null);
+  if (!settings) settings = { lucidId: "", defaultPaper_g: 50, defaultPlastic_g: 10 };
+  return { products: [], rules, settings };
+};
 };
 
 export const action = async ({ request }) => {
