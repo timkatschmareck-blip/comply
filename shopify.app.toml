@@ -1,13 +1,13 @@
 client_id = "8b24e7c97eab0a74d907aeea5dc239a5"
 name = "comply"
-application_url = "https://example.com"
+application_url = "https://comply-n6j3.onrender.com"
 embedded = true
 
 [access_scopes]
-scopes = "read_products,write_products"
+scopes = "read_products,write_products,read_orders"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = ["https://comply-n6j3.onrender.com/api/auth"]
 
 [webhooks]
 api_version = "2024-10"
