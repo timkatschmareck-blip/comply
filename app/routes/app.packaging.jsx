@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { json } from "@remix-run/node";
-import { useLoaderData, useFetcher } from "react-router";
+import { useLoaderData, useFetcher, json } from "react-router";
 import {
   Page, Layout, Card, Text, TextField, Button,
   BlockStack, InlineStack
