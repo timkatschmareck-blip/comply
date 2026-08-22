@@ -1,63 +1,32 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
-// enough when changing adapters.
-// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
   provider = "sqlite"
-  url      = "file:dev.sqlite"
+  url = env("DATABASE_URL")
 }
 
+// Shopify Session Tabelle - MUSS bleiben!
 model Session {
-  id            String    @id
-  shop          String
-  state         String
-  isOnline      Boolean   @default(false)
-  scope         String?
-  expires       DateTime?
-  accessToken   String
-  userId        BigInt?
-  firstName     String?
-  lastName      String?
-  email         String?
-  accountOwner  Boolean   @default(false)
-  locale        String?
-  collaborator  Boolean?  @default(false)
-  emailVerified Boolean?  @default(false)
-  refreshToken        String?
-  refreshTokenExpires DateTime?
-}
-model PackagingRule {
-  id        String   @id @default(cuid())
-  shop      String
-  productId String
-  paper_g   Int      @default(50)
-  plastic_g Int      @default(10)
-  createdAt DateTime @default(now())
-  @@unique([shop, productId])
+  id String @id
+  shop String
+  state String
+  isOnline Boolean @default(false)
+  scope String?
+  expires DateTime?
+  accessToken String
+  userId BigInt?
+  firstName String?
+  lastName String?
+  email String?
+  accountOwner Boolean @default(false)
+  locale String?
+  collaborator Boolean? @default(false)
+  emailVerified Boolean? @default(false)
 }
 
-model OrderCache {
-  id            String   @id @default(cuid())
-  shop          String
-  orderId       String   @unique
-  country       String
-  netRevenue    Float
-  createdAt     DateTime
-  materialPaper Int      @default(0)
-  materialPlastic Int    @default(0)
-}
-
-model ShopComplianceSettings {
-  shop            String @id
-  defaultPaper_g  Int    @default(50)
-  defaultPlastic_g Int   @default(10)
-  lucidId         String?
+// Deine neuen Models - korrekt geschlossen!
 model ShopComplianceSettings {
   id String @id @default(cuid())
   shop String @unique
