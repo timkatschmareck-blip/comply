@@ -1,5 +1,5 @@
 import { Outlet, useLoaderData } from "react-router";
-import { AppProvider as ShopifyAppProvider } from "@shopify/shopify-app-remix/react";
+import { AppProvider as ShopifyAppProvider } from "@shopify/shopify-app-react-router/react";
 import { AppProvider as PolarisAppProvider } from "@shopify/polaris";
 import enTranslations from "@shopify/polaris/locales/en.json";
 import { authenticate } from "../shopify.server";
