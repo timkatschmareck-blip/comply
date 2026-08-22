@@ -58,4 +58,19 @@ model ShopComplianceSettings {
   defaultPaper_g  Int    @default(50)
   defaultPlastic_g Int   @default(10)
   lucidId         String?
+model ShopComplianceSettings {
+  id String @id @default(cuid())
+  shop String @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PackagingRule {
+  id String @id @default(cuid())
+  shop String
+  material String
+  threshold Float
+  createdAt DateTime @default(now())
+
+  @@index([shop])
 }
