@@ -7,7 +7,6 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
-// Shopify Session Tabelle - MUSS bleiben!
 model Session {
   id String @id
   shop String
@@ -26,7 +25,6 @@ model Session {
   emailVerified Boolean? @default(false)
 }
 
-// Deine neuen Models - korrekt geschlossen!
 model ShopComplianceSettings {
   id String @id @default(cuid())
   shop String @unique
@@ -40,6 +38,5 @@ model PackagingRule {
   material String
   threshold Float
   createdAt DateTime @default(now())
-
   @@index([shop])
 }
