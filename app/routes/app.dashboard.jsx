@@ -16,16 +16,13 @@ import db from "../db.server";
 export const loader = async ({ request }) => {
   const { admin, session } = await authenticate.admin(request);
 
-  // 1. Regeln holen
   const rules = await db.packagingRule.findMany({
     where: { shop: session.shop },
   });
   
-  // Standard: Wenn keine Regel, nimm 0.2kg pro Order als Demo
   const kartonRegel = rules.find(r => r.material.toLowerCase().includes('karton'));
-  const weightPerOrder = kartonRegel ? kartonRegel.threshold : 0.2; // kg
+  const weightPerOrder = kartonRegel ? kartonRegel.threshold : 0.2;
 
-  // 2. Orders holen via GraphQL
   const response = await admin.graphql(
     `#graphql
     query {
@@ -42,21 +39,18 @@ export const loader = async ({ request }) => {
   const data = await response.json();
   const orders = data?.data?.orders?.nodes || [];
   
-  const totalOrders = orders.length;
-  const totalKg = totalOrders * weightPerOrder;
-
   return json({
     shop: session.shop,
     rules,
-    totalOrders,
-    totalKg,
+    totalOrders: orders.length,
+    totalKg: orders.length * weightPerOrder,
     weightPerOrder,
     orders,
   });
 };
 
 export default function Dashboard() {
-  const { shop, rules, totalOrders, totalKg, weightPerOrder, orders } = useLoaderData();
+  const { shop, totalOrders, totalKg, weightPerOrder, orders, rules } = useLoaderData();
 
   return (
     <Page title="LUCID Dashboard">
@@ -69,34 +63,26 @@ export default function Dashboard() {
                 <Badge tone="success">Live - {shop}</Badge>
               </InlineStack>
               <Text as="p" variant="bodyMd" tone="subdued">
-                Basierend auf {rules.length} Regel(n). Aktive Regel: {weightPerOrder} kg Karton pro Bestellung
+                Basiert auf {rules.length} Regel(n). Aktiv: {weightPerOrder} kg Karton pro Bestellung
               </Text>
-              <Box paddingBlockStart="400">
-                <InlineStack gap="400">
-                  <Card>
-                    <Box padding="400">
-                      <Text as="h3" variant="headingMd">{totalOrders}</Text>
-                      <Text as="p" tone="subdued">Bestellungen (letzte 50)</Text>
-                    </Box>
-                  </Card>
-                  <Card>
-                    <Box padding="400">
-                      <Text as="h3" variant="headingMd">{totalKg.toFixed(2)} kg</Text>
-                      <Text as="p" tone="subdued">Karton in Verkehr gebracht</Text>
-                    </Box>
-                  </Card>
-                  <Card>
-                    <Box padding="400">
-                      <Text as="h3" variant="headingMd">{(totalKg * 0.8).toFixed(2)} €</Text>
-                      <Text as="p" tone="subdued">Geschätzte Lizenzkosten*</Text>
-                    </Box>
-                  </Card>
-                </InlineStack>
-              </Box>
-              <Box paddingBlockStart="300">
-                <Text as="p" variant="bodySm" tone="subdued">* Beispiel 0,80€ / kg - für deine LUCID Meldung musst du {totalKg.toFixed(2)} kg Pappe melden.</Text>
-              </Box>
-            </Box>
+              <InlineStack gap="400">
+                <Card>
+                  <Box padding="400">
+                    <Text as="h3" variant="headingMd">{totalOrders}</Text>
+                    <Text as="p" tone="subdued">Bestellungen</Text>
+                  </Box>
+                </Card>
+                <Card>
+                  <Box padding="400">
+                    <Text as="h3" variant="headingMd">{totalKg.toFixed(2)} kg</Text>
+                    <Text as="p" tone="subdued">Karton gesamt</Text>
+                  </Box>
+                </Card>
+              </InlineStack>
+              <Text as="p" variant="bodySm" tone="subdued">
+                Für LUCID musst du {totalKg.toFixed(2)} kg Pappe melden.
+              </Text>
+            </BlockStack>
           </Box>
         </Card>
 
@@ -107,7 +93,7 @@ export default function Dashboard() {
               <DataTable
                 columnContentTypes={['text', 'text', 'text', 'text']}
                 headings={['Bestellung', 'Datum', 'Status', 'Verpackung']}
-                rows={orders.map(o => [
+                rows={orders.map((o) => [
                   o.name,
                   new Date(o.createdAt).toLocaleDateString('de-DE'),
                   o.displayFulfillmentStatus,
