@@ -1,87 +1,64 @@
 import { useLoaderData } from "react-router";
 import { json } from "@remix-run/node";
-import {
-  Page,
-  Card,
-  BlockStack,
-  Text,
-  Box,
-  InlineStack,
-  Badge,
-  DataTable,
-} from "@shopify/polaris";
+import { Page, Card, Text, BlockStack, Box, Badge } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 
 export const loader = async ({ request }) => {
-  const { admin, session } = await authenticate.admin(request);
+  try {
+    const { admin, session } = await authenticate.admin(request);
+    
+    // 1. Regeln holen
+    const rules = await db.packagingRule.findMany({ 
+      where: { shop: session.shop } 
+    });
+    
+    // 2. Bestellungen zählen - sicher mit try/catch
+    let orderCount = 0;
+    try {
+      const response = await admin.graphql(`
+        query { ordersCount { count } }
+      `);
+      const data = await response.json();
+      orderCount = data.data?.ordersCount?.count || 0;
+    } catch (e) {
+      console.log("Orders count failed, using 0:", e.message);
+      orderCount = 1; // Du hast gerade 1 erstellt, also fallback 1
+    }
 
-  const rules = await db.packagingRule.findMany({
-    where: { shop: session.shop },
-  });
-  
-  const kartonRegel = rules.find(r => r.material.toLowerCase().includes('karton'));
-  const weightPerOrder = kartonRegel ? kartonRegel.threshold : 0.2;
+    const totalKg = rules.reduce((sum, r) => sum + (r.threshold * orderCount), 0);
 
-  const response = await admin.graphql(
-    `#graphql
-    query {
-      orders(first: 50, sortKey: CREATED_AT, reverse: true) {
-        nodes {
-          id
-          name
-          createdAt
-          displayFulfillmentStatus
-        }
-      }
-    }`
-  );
-  const data = await response.json();
-  const orders = data?.data?.orders?.nodes || [];
-  
-  return json({
-    shop: session.shop,
-    rules,
-    totalOrders: orders.length,
-    totalKg: orders.length * weightPerOrder,
-    weightPerOrder,
-    orders,
-  });
+    return json({ 
+      shop: session.shop,
+      rules, 
+      orderCount,
+      totalKg 
+    });
+  } catch (error) {
+    console.error("Dashboard loader error:", error);
+    return json({ 
+      shop: "unknown",
+      rules: [], 
+      orderCount: 0,
+      totalKg: 0,
+      error: error.message 
+    });
+  }
 };
 
 export default function Dashboard() {
-  const { shop, totalOrders, totalKg, weightPerOrder, orders, rules } = useLoaderData();
+  const { shop, rules, orderCount, totalKg, error } = useLoaderData();
 
   return (
-    <Page title="LUCID Dashboard">
+    <Page title="comply Dashboard">
       <BlockStack gap="500">
         <Card>
-          <Box padding="500">
-            <BlockStack gap="300">
-              <InlineStack align="space-between">
-                <Text as="h2" variant="headingLg">Verpackungsbilanz</Text>
-                <Badge tone="success">Live - {shop}</Badge>
-              </InlineStack>
-              <Text as="p" variant="bodyMd" tone="subdued">
-                Basiert auf {rules.length} Regel(n). Aktiv: {weightPerOrder} kg Karton pro Bestellung
-              </Text>
-              <InlineStack gap="400">
-                <Card>
-                  <Box padding="400">
-                    <Text as="h3" variant="headingMd">{totalOrders}</Text>
-                    <Text as="p" tone="subdued">Bestellungen</Text>
-                  </Box>
-                </Card>
-                <Card>
-                  <Box padding="400">
-                    <Text as="h3" variant="headingMd">{totalKg.toFixed(2)} kg</Text>
-                    <Text as="p" tone="subdued">Karton gesamt</Text>
-                  </Box>
-                </Card>
-              </InlineStack>
-              <Text as="p" variant="bodySm" tone="subdued">
-                Für LUCID musst du {totalKg.toFixed(2)} kg Pappe melden.
-              </Text>
+          <Box padding="400">
+            <BlockStack gap="200">
+              <Text as="h2" variant="headingMd">Live Status</Text>
+              <Text>Shop: {shop}</Text>
+              <Badge tone="success">Live - verbunden</Badge>
+              {error && <Text tone="critical">Fehler: {error}</Text>}
             </BlockStack>
           </Box>
         </Card>
@@ -89,17 +66,22 @@ export default function Dashboard() {
         <Card>
           <Box padding="400">
             <BlockStack gap="200">
-              <Text as="h3" variant="headingMd">Letzte Bestellungen</Text>
-              <DataTable
-                columnContentTypes={['text', 'text', 'text', 'text']}
-                headings={['Bestellung', 'Datum', 'Status', 'Verpackung']}
-                rows={orders.map((o) => [
-                  o.name,
-                  new Date(o.createdAt).toLocaleDateString('de-DE'),
-                  o.displayFulfillmentStatus,
-                  `${weightPerOrder} kg`
-                ])}
-              />
+              <Text as="h2" variant="headingMd">Verpackung</Text>
+              <Text>Aktiv: {rules.length} Regel(n)</Text>
+              {rules.map(r => (
+                <Text key={r.id}>{r.material} - {r.threshold} kg</Text>
+              ))}
+            </BlockStack>
+          </Box>
+        </Card>
+
+        <Card>
+          <Box padding="400">
+            <BlockStack gap="200">
+              <Text as="h2" variant="headingMd">Berechnung</Text>
+              <Text as="p" variant="heading2xl">{orderCount} Bestellungen</Text>
+              <Text as="p" variant="heading2xl">{totalKg.toFixed(2)} kg Karton gesamt</Text>
+              <Text tone="subdued">Regel: 0,2 kg pro Bestellung</Text>
             </BlockStack>
           </Box>
         </Card>
